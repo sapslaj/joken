@@ -77,8 +77,8 @@ defmodule Joken.Config.Test do
 
     test "default iss validates properly" do
       exp_claim = Config.default_claims()["iss"]
-      assert exp_claim.validate.("Joken", %{}, %{})
-      refute exp_claim.validate.("Another", %{}, %{})
+      assert :ok == exp_claim.validate.("Joken", %{}, %{})
+      refute :ok == exp_claim.validate.("Another", %{}, %{})
     end
 
     test "default nbf validates properly" do

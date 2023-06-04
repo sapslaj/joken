@@ -283,10 +283,22 @@ defmodule Joken.Config do
             add_claim(acc, "nbf", fn -> current_time() end, &(current_time() >= &1))
 
           :iss ->
-            add_claim(acc, "iss", fn -> default_iss end, &(&1 == default_iss))
+            add_claim(acc, "iss", fn -> default_iss end, fn iss ->
+              if iss == default_iss do
+                :ok
+              else
+                {:error, message: "Got iss #{inspect(iss)} but was expecting #{inspect(default_iss)}"}
+              end
+            end)
 
           :aud ->
-            add_claim(acc, "aud", fn -> default_aud end, &(&1 == default_aud))
+            add_claim(acc, "aud", fn -> default_aud end, fn aud ->
+              if aud == default_aud do
+                :ok
+              else
+                {:error, message: "Got aud #{inspect(aud)} but was expecting #{inspect(default_aud)}"}
+              end
+            end)
 
           :jti ->
             add_claim(acc, "jti", generate_jti)
