@@ -70,12 +70,11 @@ defmodule JokenTest do
         end)
 
       validate_fun = fn ->
-        assert {:error, [message: "Invalid token", claim: "iss", claim_val: "someone"]} ==
+        assert {:error, [message: "Token failed validation for claim iss", claim: "iss", claim_val: "someone"]} ==
                  Joken.validate(token_config, %{"iss" => "someone"}, %{})
       end
 
-      assert capture_log(validate_fun) =~
-               "Claim %{\"iss\" => \"someone\"} did not pass validation.\n\nCurrent time: "
+      assert String.contains?(capture_log(validate_fun), "Claim %{\"iss\" => \"someone\"} did not pass validation")
     end
 
     @tag :capture_log

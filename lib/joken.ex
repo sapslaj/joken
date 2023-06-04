@@ -374,37 +374,41 @@ defmodule Joken do
   defp reduce_validations(config, claim_map, context) do
     claim_map
     |> Enum.reduce_while(nil, fn {key, claim_val}, _acc ->
-      # When there is a function for validating the token
-      with %Claim{validate: val_func} when not is_nil(val_func) <- config[key],
-           true <- val_func.(claim_val, claim_map, context) do
-        {:cont, :ok}
-      else
+      case config[key] do
         # When there is no configuration for the claim
-        nil ->
-          {:cont, :ok}
+        nil -> {:cont, :ok}
 
         # When there is a configuration but no validation function
-        %Claim{validate: nil} ->
-          {:cont, :ok}
+        %Claim{validate: nil} -> {:cont, :ok}
 
-        # When it fails validation
-        false ->
-          Logger.debug(fn ->
-            """
-            Claim %{"#{key}" => #{inspect(claim_val)}} did not pass validation.
-
-            Current time: #{inspect(Joken.current_time())}
-            """
-          end)
-
-          message = Keyword.get(config[key].options, :message, "Invalid token")
-          {:halt, {:error, message: message, claim: key, claim_val: claim_val}}
+        # When validation function exists
+        %Claim{validate: val_func} when is_function(val_func) ->
+          failure_message = Keyword.get(config[key].options, :message, "Token failed validation for claim #{key}")
+          case val_func.(claim_val, claim_map, context) do
+            true -> {:cont, :ok}
+            false ->
+              log_validation_failure(key, claim_val, val_func)
+              {:halt, {:error, message: failure_message, claim: key, claim_val: claim_val}}
+            :ok -> {:cont, :ok}
+            {:ok} -> {:cont, :ok}
+            {:error, err} ->
+              log_validation_failure(key, claim_val, val_func)
+              {:halt, {:error, err}}
+          end
       end
     end)
     |> case do
       :ok -> {:ok, claim_map}
       err -> err
     end
+  end
+
+  defp log_validation_failure(key, claim_val, val_func) do
+    Logger.debug(fn ->
+      """
+      Claim %{"#{key}" => #{inspect(claim_val)}} did not pass validation #{inspect(val_func)}.
+      """
+    end)
   end
 
   # This ensures we provide an easy to setup test environment

@@ -150,7 +150,7 @@ defmodule Joken.HooksTest do
     end
 
     assert capture_io(fun) ==
-             "Got error: [message: \"Invalid token\", claim: \"test\", claim_val: \"TEST\"]\n"
+             "Got error: [message: \"Token failed validation for claim test\", claim: \"test\", claim_val: \"TEST\"]\n"
   end
 
   test "empty hooks is a pass through implementation" do
